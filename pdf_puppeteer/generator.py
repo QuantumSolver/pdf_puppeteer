@@ -53,8 +53,14 @@ def get_pdf(print_format, html, options, output, pdf_generator=None):
     Generate PDF using Puppeteer Node script.
     This function is called by Frappe when pdf_generator is set to "puppeteer".
     """
-    if pdf_generator != "puppeteer":
-        # Fallback to default PDF generator
+    # Handle the case where pdf_generator might be validated by Frappe's type system
+    # If it's not "puppeteer", it could be because of type validation issues
+    try:
+        if pdf_generator != "puppeteer":
+            # Fallback to default PDF generator
+            return
+    except Exception:
+        # If there's any issue with pdf_generator validation, fall back gracefully
         return
 
     # Determine path to Node script
