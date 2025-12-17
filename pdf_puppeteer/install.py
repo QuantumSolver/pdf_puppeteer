@@ -35,6 +35,15 @@ def install_chromium_if_needed():
                 ("zypper", ["install", "-y", "chromium"])
             ]
 
+            # Try different Chromium package names for different distributions
+            chromium_packages = [
+                ("chromium-browser", "Standard Chromium browser package"),
+                ("chromium", "Alternative Chromium package name"),
+                ("chromium-chromedriver", "Chromium with chromedriver"),
+                ("google-chrome-stable", "Google Chrome stable version"),
+                ("chrome-gnome-shell", "Chrome GNOME shell (fallback)"),
+            ]
+
             for manager, args in package_managers:
                 try:
                     # Check if package manager is available
@@ -47,16 +56,38 @@ def install_chromium_if_needed():
                     if check_result.returncode == 0:
                         print(f"Using {manager} to install Chromium...")
 
-                        # Install chromium
-                        install_result = subprocess.run(
-                            [manager] + args,
-                            capture_output=True,
-                            text=True,
-                            check=True
-                        )
+                        # Try different package names for this manager
+                        for package_name, package_desc in chromium_packages:
+                            try:
+                                print(f"Attempting to install {package_name} ({package_desc})...")
 
-                        print(f"Chromium installed successfully using {manager}")
-                        return
+                                # Special handling for apt-get (Debian/Ubuntu)
+                                if manager == "apt-get":
+                                    # Update package list first
+                                    subprocess.run(
+                                        ["sudo", manager, "update"],
+                                        capture_output=True,
+                                        text=True,
+                                        check=True
+                                    )
+
+                                # Install the package
+                                install_result = subprocess.run(
+                                    [manager] + args[:-1] + [package_name],
+                                    capture_output=True,
+                                    text=True,
+                                    check=True
+                                )
+
+                                print(f"✅ Successfully installed {package_name} using {manager}")
+                                return
+
+                            except subprocess.CalledProcessError as e:
+                                print(f"❌ Failed to install {package_name}: {e.stderr.strip()}")
+                                continue
+                            except Exception as e:
+                                print(f"⚠️  Error installing {package_name}: {str(e)}")
+                                continue
 
                 except subprocess.CalledProcessError as e:
                     print(f"Failed to install Chromium using {manager}: {e.stderr}")
@@ -66,9 +97,20 @@ def install_chromium_if_needed():
                     continue
 
             print("⚠️  Could not automatically install Chromium. Please install it manually.")
-            print("On Ubuntu/Debian: sudo apt-get install chromium-browser")
-            print("On CentOS/RHEL: sudo yum install chromium")
-            print("On Alpine: sudo apk add chromium")
+            print("\n📋 **Installation Options:**")
+            print("• Ubuntu/Debian: sudo apt-get install chromium-browser")
+            print("• CentOS/RHEL: sudo yum install chromium")
+            print("• Alpine: sudo apk add chromium")
+            print("• Google Chrome: sudo apt-get install google-chrome-stable")
+            print("\n🐳 **For Docker Environments:**")
+            print("1. Install Chromium in your Dockerfile:")
+            print("   RUN apt-get update && apt-get install -y chromium-browser")
+            print("2. Or use a pre-built image with Chromium")
+            print("3. Or install Google Chrome instead:")
+            print("   RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb")
+            print("   RUN apt-get install -y ./google-chrome-stable_current_amd64.deb")
+            print("\n💡 **Alternative:** You can also modify puppeteer_pdf.js to use an existing")
+            print("   Chrome/Chromium binary path if one is already available in your system.")
 
         else:
             print("✓ Chromium browser is already installed")
