@@ -9,9 +9,41 @@ const path = require('path');
  * @returns {Promise<Buffer>} PDF buffer
  */
 async function generatePdfFromHtml(html, options = {}) {
+    // Try to find available browser executables
+    const browserPaths = [
+        '/usr/bin/chromium-browser',  // Standard Chromium on Ubuntu/Debian
+        '/usr/bin/chromium',          // Alternative Chromium path
+        '/usr/bin/google-chrome',     // Google Chrome stable
+        '/usr/bin/google-chrome-stable', // Google Chrome stable (alternative)
+        '/usr/bin/chrome',            // Generic chrome
+        '/usr/bin/chromium-browser-sandbox', // Chromium with sandbox
+        '/opt/google/chrome/google-chrome', // Google Chrome in /opt
+        '/snap/bin/chromium',         // Snap package
+        '/snap/bin/chromium-browser', // Snap package (alternative)
+    ];
+
+    // Find the first available browser
+    let executablePath = null;
+    for (const path of browserPaths) {
+        try {
+            // Check if the browser exists and is executable
+            require('fs').accessSync(path, require('fs').constants.X_OK);
+            executablePath = path;
+            console.log(`🔍 Using browser at: ${path}`);
+            break;
+        } catch (e) {
+            // Browser not found at this path, try next one
+        }
+    }
+
+    if (!executablePath) {
+        throw new Error('No supported browser found. Please install Chromium or Google Chrome. ' +
+                       'Supported browsers: chromium-browser, chromium, google-chrome, google-chrome-stable');
+    }
+
     const browser = await puppeteer.launch({
         headless: 'new',
-        executablePath: '/usr/bin/chromium-browser',
+        executablePath: executablePath,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
