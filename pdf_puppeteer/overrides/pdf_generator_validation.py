@@ -5,14 +5,29 @@ This module patches Frappe's type validation system to accept 'puppeteer' as a v
 value for the pdf_generator parameter, bypassing the strict Literal type checking.
 """
 
-import frappe
-from frappe.utils.typing_validations import transform_parameter_types
 from typing import Optional, Literal, Union
 import functools
 import inspect
 
-# Original function reference
-_original_transform_parameter_types = transform_parameter_types
+# Lazy import - frappe will be imported when actually needed
+_frappe = None
+_original_transform_parameter_types = None
+
+def get_frappe():
+    """Lazy import of frappe to avoid build-time issues."""
+    global _frappe
+    if _frappe is None:
+        import frappe
+        _frappe = frappe
+    return _frappe
+
+def get_original_transform():
+    """Lazy import of the original transform function."""
+    global _original_transform_parameter_types
+    if _original_transform_parameter_types is None:
+        frappe = get_frappe()
+        _original_transform_parameter_types = frappe.utils.typing_validations.transform_parameter_types
+    return _original_transform_parameter_types
 
 def is_pdf_generator_parameter(func, args, kwargs):
     """Check if the current call involves pdf_generator parameter."""
@@ -82,7 +97,8 @@ def patched_transform_parameter_types(func, args, kwargs):
 
                     try:
                         # Call the original transform_parameter_types
-                        result = _original_transform_parameter_types(original_func, inner_args, inner_kwargs)
+                        original_transform = get_original_transform()
+                        result = original_transform(original_func, inner_args, inner_kwargs)
                         # Restore the original value in the result
                         if result and len(result) > 1 and isinstance(result[1], dict):
                             result[1]['pdf_generator'] = original_pdf_generator
@@ -91,19 +107,19 @@ def patched_transform_parameter_types(func, args, kwargs):
                         inner_kwargs['pdf_generator'] = original_pdf_generator
                 else:
                     # Normal processing
-                    return _original_transform_parameter_types(original_func, inner_args, inner_kwargs)
+                    original_transform = get_original_transform()
+                    return original_transform(original_func, inner_args, inner_kwargs)
 
             return wrapped_func(func, args, kwargs)
 
     # Normal processing for non-pdf_generator calls
-    return _original_transform_parameter_types(func, args, kwargs)
+    original_transform = get_original_transform()
+    return original_transform(func, args, kwargs)
 
 def apply_pdf_generator_validation_patch():
     """Apply the monkey patch to fix pdf_generator validation."""
     try:
-        # Import inspect for parameter inspection
-        global inspect
-        import inspect
+        frappe = get_frappe()
 
         # Replace the original function with our patched version
         frappe.utils.typing_validations.transform_parameter_types = patched_transform_parameter_types
@@ -116,6 +132,7 @@ def apply_pdf_generator_validation_patch():
         return True
     except Exception as e:
         try:
+            frappe = get_frappe()
             frappe.log_error(f"Failed to apply PDF generator validation patch: {str(e)}", "PDF Puppeteer Patch Error")
         except:
             print(f"⚠️  Failed to apply PDF generator validation patch: {str(e)}")
@@ -124,17 +141,21 @@ def apply_pdf_generator_validation_patch():
 def remove_pdf_generator_validation_patch():
     """Remove the monkey patch and restore original behavior."""
     try:
+        frappe = get_frappe()
+        original_transform = get_original_transform()
+
         # Restore original function
-        frappe.utils.typing_validations.transform_parameter_types = _original_transform_parameter_types
+        frappe.utils.typing_validations.transform_parameter_types = original_transform
 
         # Also restore in the module
         import frappe.utils.typing_validations
-        frappe.utils.typing_validations.transform_parameter_types = _original_transform_parameter_types
+        frappe.utils.typing_validations.transform_parameter_types = original_transform
 
         print("✅ Removed PDF generator validation patch")
         return True
     except Exception as e:
         try:
+            frappe = get_frappe()
             frappe.log_error(f"Failed to remove PDF generator validation patch: {str(e)}", "PDF Puppeteer Patch Error")
         except:
             print(f"⚠️  Failed to remove PDF generator validation patch: {str(e)}")
