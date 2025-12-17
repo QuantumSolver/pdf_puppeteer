@@ -1,9 +1,21 @@
+from . import __version__ as app_version
+
 app_name = "pdf_puppeteer"
 app_title = "Pdf Puppeteer"
 app_publisher = "ExN"
 app_description = "PDF Generator"
 app_email = "marcques@exn1.uk"
 app_license = "mit"
+
+# PDF Generator Hook
+pdf_generator = "pdf_puppeteer.pdf_puppeteer.generator.get_pdf"
+
+# Installation
+before_install = "pdf_puppeteer.pdf_puppeteer.install.before_install"
+after_install = "pdf_puppeteer.pdf_puppeteer.install.after_install"
+
+# Uninstallation
+before_uninstall = "pdf_puppeteer.pdf_puppeteer.uninstall.before_uninstall"
 
 # Apps
 # ------------------
