@@ -121,6 +121,11 @@ def apply_pdf_generator_validation_patch():
     try:
         frappe = get_frappe()
 
+        # Store the REAL original function before patching
+        global _original_transform_parameter_types
+        if _original_transform_parameter_types is None:
+            _original_transform_parameter_types = frappe.utils.typing_validations.transform_parameter_types
+
         # Replace the original function with our patched version
         frappe.utils.typing_validations.transform_parameter_types = patched_transform_parameter_types
 
