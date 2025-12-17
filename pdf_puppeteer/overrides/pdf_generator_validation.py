@@ -115,7 +115,10 @@ def apply_pdf_generator_validation_patch():
         print("✅ Applied PDF generator validation patch - 'puppeteer' is now allowed")
         return True
     except Exception as e:
-        frappe.log_error(f"Failed to apply PDF generator validation patch: {str(e)}", "PDF Puppeteer Patch Error")
+        try:
+            frappe.log_error(f"Failed to apply PDF generator validation patch: {str(e)}", "PDF Puppeteer Patch Error")
+        except:
+            print(f"⚠️  Failed to apply PDF generator validation patch: {str(e)}")
         return False
 
 def remove_pdf_generator_validation_patch():
@@ -131,7 +134,10 @@ def remove_pdf_generator_validation_patch():
         print("✅ Removed PDF generator validation patch")
         return True
     except Exception as e:
-        frappe.log_error(f"Failed to remove PDF generator validation patch: {str(e)}", "PDF Puppeteer Patch Error")
+        try:
+            frappe.log_error(f"Failed to remove PDF generator validation patch: {str(e)}", "PDF Puppeteer Patch Error")
+        except:
+            print(f"⚠️  Failed to remove PDF generator validation patch: {str(e)}")
         return False
 
 # Apply the patch when this module is imported
