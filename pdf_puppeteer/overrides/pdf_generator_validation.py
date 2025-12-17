@@ -9,6 +9,7 @@ import frappe
 from frappe.utils.typing_validations import transform_parameter_types
 from typing import Optional, Literal, Union
 import functools
+import inspect
 
 # Original function reference
 _original_transform_parameter_types = transform_parameter_types
