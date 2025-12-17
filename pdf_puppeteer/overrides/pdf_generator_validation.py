@@ -140,5 +140,6 @@ def remove_pdf_generator_validation_patch():
             print(f"⚠️  Failed to remove PDF generator validation patch: {str(e)}")
         return False
 
-# Apply the patch when this module is imported
-apply_pdf_generator_validation_patch()
+# Note: Patch is NOT applied automatically on import to avoid frappe initialization issues
+# It should be applied explicitly when frappe is ready (e.g., during installation)
+# apply_pdf_generator_validation_patch()

@@ -82,8 +82,9 @@ def patch_frappe_type_validation():
     except Exception as e:
         frappe.log_error(f"Could not patch type validation: {str(e)}", "PDF Puppeteer Init")
 
-# Apply patch immediately when this module is imported
-patch_frappe_type_validation()
+# Note: Patch is NOT applied automatically on import to avoid frappe initialization issues
+# It will be applied explicitly during installation when frappe is ready
+# patch_frappe_type_validation()
 
 def before_install():
     """Run before the app is installed."""
@@ -215,10 +216,14 @@ def add_pdf_generator_option():
 def fix_type_validation_comprehensive():
     """Apply comprehensive fixes for type validation issues."""
     try:
-        # 1. Ensure the patch is applied
+        # 1. Apply the main validation patch from overrides
+        from .overrides.pdf_generator_validation import apply_pdf_generator_validation_patch
+        apply_pdf_generator_validation_patch()
+
+        # 2. Also apply the install.py patch for redundancy
         patch_frappe_type_validation()
 
-        # 2. Create a custom validation method override
+        # 3. Create a custom validation method override
         create_custom_validation_override()
 
         click.echo("✅ Applied comprehensive type validation fixes")
